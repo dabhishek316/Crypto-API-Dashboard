@@ -35,7 +35,9 @@ url= {
     "orders_create" : "https://api.coindcx.com/exchange/v1/orders/create",
     "users_balance" : "https://api.coindcx.com/exchange/v1/users/balances",
     "exchange_ticker" : "https://api.coindcx.com/exchange/ticker",
-    "user_data" : "https://api.coindcx.com/exchange/v1/users/info"
+    "user_data" : "https://api.coindcx.com/exchange/v1/users/info",
+    "markets_details" : "https://api.coindcx.com/exchange/v1/markets_details",
+    "get_candles" : "https://public.coindcx.com/market_data/candles?pair=B-BTC_USDT&interval=1m",
 }
 
 json_body = json.dumps(body, separators=(",", ":"))
@@ -121,7 +123,7 @@ st.write(
 
 
 
-my_balance, market_data, user_data = st.tabs(["My Balance", "Market Data", "User Data"])
+my_balance, market_data, user_data,candles  = st.tabs(["My Balance", "Market Data", "User Data", "Candles"])
 with my_balance:
     st.subheader("My Balance", divider=True)
     def user_balance(st, requests, pd, url , body):
@@ -152,15 +154,35 @@ with market_data:
             # st.write(response.json())
             df[['ask', 'bid']] = df[['ask', 'bid']].apply(pd.to_numeric)
             df["ask_bid_difference"] = df["ask"]- df["bid"]
-            df["ask_per"] = (df["ask_bid_difference"]/df["ask"])*100
-            df["bid_per"] = (df["ask_bid_difference"]/df["bid"])*100
+            df["ask_bid_per_difference"] = (df["ask_bid_difference"]/((df["ask"]+df["bid"])/2))*100
             df = df[df["market"].str.contains('INR', na=False)]
             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s', utc=True).dt.tz_convert('Asia/Kolkata')
-            df.sort_values(by="ask_bid_difference", ascending=False, inplace=True)
+            df.sort_values(by="ask_bid_per_difference", ascending=False, inplace=True)
             df.index = range(1, len(df) + 1)
             
             st.dataframe(df, use_container_width=True,key="dataframe")
     get_exchange_coin_info(st, requests, pd, url["exchange_ticker"], body["exchange_ticker"])
+
+with candles:
+    st.subheader("Candles", divider=True)
+    def get_candles(st, requests, pd, url , body=None):
+        st.button("Refresh Candles Data",use_container_width=True)
+        with st.empty():
+            response = requests.get(url["markets_details"])
+            df_market = pd.DataFrame(response.json())
+            df_market = df_market[df_market["base_currency_short_name"].str.contains('INR', na=False)]["pair"]
+            # st.dataframe(df_market, use_container_width=True,key="dataframe")
+            df_candle=pd.DataFrame()
+            # for x in df_market:
+            pair = "I-ETH_INR"
+            interval = "1m"
+            response2 = requests.get(f"https://public.coindcx.com/market_data/candles?pair={pair}&interval={interval}")
+
+            df_candle = pd.DataFrame(response2.json())
+            df_candle['time'] = pd.to_datetime(df_candle['time'], unit='ms', utc=True).dt.tz_convert('Asia/Kolkata')
+                # st.write(df_market)
+            st.dataframe(df_candle, use_container_width=True,key="dataframe")
+    get_candles(st, requests, pd, url)
 
 with user_data:
     def User_data(st, requests, pd, url , body):
