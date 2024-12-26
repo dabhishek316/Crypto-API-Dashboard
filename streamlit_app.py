@@ -118,51 +118,59 @@ st.write(
 #     .properties(height=320)
 # )
 # st.altair_chart(chart, use_container_width=True)
-st.subheader("My Balance", divider=True)
-def user_balance(st, requests, pd, url , body):
-    st.button("Refresh Balance Data",use_container_width=True)
-    with st.empty():
-        response = requests.post(url, data = json_body, headers = headers)
-        data = response.json()
-        final=[]
-        for d in  data:
-            if d['balance'] > 0 or d['locked_balance'] > 0:
-                final.append(d)
-        df = pd.DataFrame(final)
-        df[['balance', 'locked_balance']].apply(pd.to_numeric)
-        df = df[["currency", "locked_balance", "balance"]]
-        
-        df.sort_values(by="balance", ascending=False, inplace=True)
-        df.index = range(1, len(df) + 1)
-        st.write(df,use_container_width=True)
-user_balance(st, requests, pd, url["users_balance"], body["users_balance"])
-# def user_data(st, requests, pd, url , body):
-#     st.button("Refresh user Data",use_container_width=True)
-#     with st.empty():
-#         response = requests.post(url, data = json_body, headers = headers)
-#         data = response.json()
-#         st.text(data["coindcx_id"])
-#         st.text(data["first_name"])
-#         st.text(data["last_name"])
-#         st.text(data["mobile_number"])
-#         st.text(data["email"])
-# user_data(st, requests, pd, url["user_data"], body["users_balance"])
-st.subheader("Market Data", divider=True)
-def get_exchange_coin_info(st, requests, pd, url , body):
-    st.button("Refresh Market Data",use_container_width=True)
-    with st.empty():
-        response = requests.get(url)
-        df = pd.DataFrame(response.json())
-        # st.write(response.json())
-        df[['ask', 'bid']] = df[['ask', 'bid']].apply(pd.to_numeric)
-        df["ask_bid_difference"] = df["ask"]- df["bid"]
-        df["ask_per"] = (df["ask_bid_difference"]/df["ask"])*100
-        df["bid_per"] = (df["ask_bid_difference"]/df["bid"])*100
-        df = df[df["market"].str.contains('INR', na=False)]
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s', utc=True).dt.tz_convert('Asia/Kolkata')
-        df.sort_values(by="ask_bid_difference", ascending=False, inplace=True)
-        df.index = range(1, len(df) + 1)
-        
-        st.dataframe(df, use_container_width=True,key="dataframe")
-get_exchange_coin_info(st, requests, pd, url["exchange_ticker"], body["exchange_ticker"])
 
+
+
+my_balance, market_data, user_data = st.tabs(["My Balance", "Market Data", "User Data"])
+with my_balance:
+    st.subheader("My Balance", divider=True)
+    def user_balance(st, requests, pd, url , body):
+        st.button("Refresh Balance Data",use_container_width=True)
+        with st.empty():
+            response = requests.post(url, data = json_body, headers = headers)
+            data = response.json()
+            final=[]
+            for d in  data:
+                if d['balance'] > 0 or d['locked_balance'] > 0:
+                    final.append(d)
+            df = pd.DataFrame(final)
+            df[['balance', 'locked_balance']].apply(pd.to_numeric)
+            df = df[["currency", "locked_balance", "balance"]]
+            
+            df.sort_values(by="balance", ascending=False, inplace=True)
+            df.index = range(1, len(df) + 1)
+            st.write(df,use_container_width=True)
+    user_balance(st, requests, pd, url["users_balance"], body["users_balance"])
+
+with market_data:
+    st.subheader("Market Data", divider=True)
+    def get_exchange_coin_info(st, requests, pd, url , body):
+        st.button("Refresh Market Data",use_container_width=True)
+        with st.empty():
+            response = requests.get(url)
+            df = pd.DataFrame(response.json())
+            # st.write(response.json())
+            df[['ask', 'bid']] = df[['ask', 'bid']].apply(pd.to_numeric)
+            df["ask_bid_difference"] = df["ask"]- df["bid"]
+            df["ask_per"] = (df["ask_bid_difference"]/df["ask"])*100
+            df["bid_per"] = (df["ask_bid_difference"]/df["bid"])*100
+            df = df[df["market"].str.contains('INR', na=False)]
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s', utc=True).dt.tz_convert('Asia/Kolkata')
+            df.sort_values(by="ask_bid_difference", ascending=False, inplace=True)
+            df.index = range(1, len(df) + 1)
+            
+            st.dataframe(df, use_container_width=True,key="dataframe")
+    get_exchange_coin_info(st, requests, pd, url["exchange_ticker"], body["exchange_ticker"])
+
+with user_data:
+    def User_data(st, requests, pd, url , body):
+        row = st.container()
+        with row:
+            response = requests.post(url, data = json_body, headers = headers)
+            data = response.json()
+            st.text("coindcx_id : " + data["coindcx_id"])
+            st.text("first_name : " + data["first_name"])
+            st.text("last_name : " + data["last_name"])
+            st.text("mobile_number : " + data["mobile_number"])
+            st.text("email : " + data["email"])
+    User_data(st, requests, pd, url["user_data"], body["users_balance"])
