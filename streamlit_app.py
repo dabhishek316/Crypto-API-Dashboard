@@ -70,60 +70,7 @@ st.write(
 )
 
 
-# Load the data from a CSV. We're caching this so it doesn't reload every time the app
-# reruns (e.g. if the user interacts with the widgets).
-# @st.cache_data
-# def load_data():
-#     df = pd.read_csv("data/movies_genres_summary.csv")
-#     return df
-
-
-# df = load_data()
-
-# # Show a multiselect widget with the genres using `st.multiselect`.
-# genres = st.multiselect(
-#     "Genres",
-#     df.genre.unique(),
-#     ["Action", "Adventure", "Biography", "Comedy", "Drama", "Horror"],
-# )
-
-# # Show a slider widget with the years using `st.slider`.
-# years = st.slider("Years", 1986, 2006, (2000, 2016))
-
-# # Filter the dataframe based on the widget input and reshape it.
-# df_filtered = df[(df["genre"].isin(genres)) & (df["year"].between(years[0], years[1]))]
-# df_reshaped = df_filtered.pivot_table(
-#     index="year", columns="genre", values="gross", aggfunc="sum", fill_value=0
-# )
-# df_reshaped = df_reshaped.sort_values(by="year", ascending=False)
-
-
-# # Display the data as a table using `st.dataframe`.
-# st.dataframe(
-#     df_reshaped,
-#     use_container_width=True,
-#     column_config={"year": st.column_config.TextColumn("Year")},
-# )
-
-# Display the data as an Altair chart using `st.altair_chart`.
-# df_chart = pd.melt(
-#     df_reshaped.reset_index(), id_vars="year", var_name="genre", value_name="gross"
-# )
-# chart = (
-#     alt.Chart(df_chart)
-#     .mark_line()
-#     .encode(
-#         x=alt.X("year:N", title="Year"),
-#         y=alt.Y("gross:Q", title="Gross earnings ($)"),
-#         color="genre:N",
-#     )
-#     .properties(height=320)
-# )
-# st.altair_chart(chart, use_container_width=True)
-
-
-
-my_balance, market_data, user_data,candles  = st.tabs(["My Balance", "Market Data", "User Data", "Candles"])
+my_balance, market_data  = st.tabs(["My Balance", "Market Data"])
 with my_balance:
     st.subheader("My Balance", divider=True)
     def user_balance(st, requests, pd, url , body):
@@ -163,36 +110,36 @@ with market_data:
             st.dataframe(df, use_container_width=True,key="dataframe")
     get_exchange_coin_info(st, requests, pd, url["exchange_ticker"], body["exchange_ticker"])
 
-with candles:
-    st.subheader("Candles", divider=True)
-    def get_candles(st, requests, pd, url , body=None):
-        st.button("Refresh Candles Data",use_container_width=True)
-        with st.empty():
-            response = requests.get(url["markets_details"])
-            df_market = pd.DataFrame(response.json())
-            df_market = df_market[df_market["base_currency_short_name"].str.contains('INR', na=False)]["pair"]
-            # st.dataframe(df_market, use_container_width=True,key="dataframe")
-            df_candle=pd.DataFrame()
-            # for x in df_market:
-            pair = "I-ETH_INR"
-            interval = "1m"
-            response2 = requests.get(f"https://public.coindcx.com/market_data/candles?pair={pair}&interval={interval}")
+# with candles:
+#     st.subheader("Candles", divider=True)
+#     def get_candles(st, requests, pd, url , body=None):
+#         st.button("Refresh Candles Data",use_container_width=True)
+#         with st.empty():
+#             response = requests.get(url["markets_details"])
+#             df_market = pd.DataFrame(response.json())
+#             df_market = df_market[df_market["base_currency_short_name"].str.contains('INR', na=False)]["pair"]
+#             # st.dataframe(df_market, use_container_width=True,key="dataframe")
+#             df_candle=pd.DataFrame()
+#             # for x in df_market:
+#             pair = "I-ETH_INR"
+#             interval = "1m"
+#             response2 = requests.get(f"https://public.coindcx.com/market_data/candles?pair={pair}&interval={interval}")
 
-            df_candle = pd.DataFrame(response2.json())
-            df_candle['time'] = pd.to_datetime(df_candle['time'], unit='ms', utc=True).dt.tz_convert('Asia/Kolkata')
-                # st.write(df_market)
-            st.dataframe(df_candle, use_container_width=True,key="dataframe")
-    get_candles(st, requests, pd, url)
+#             df_candle = pd.DataFrame(response2.json())
+#             df_candle['time'] = pd.to_datetime(df_candle['time'], unit='ms', utc=True).dt.tz_convert('Asia/Kolkata')
+#                 # st.write(df_market)
+#             st.dataframe(df_candle, use_container_width=True,key="dataframe")
+#     get_candles(st, requests, pd, url)
 
-with user_data:
-    def User_data(st, requests, pd, url , body):
-        row = st.container()
-        with row:
-            response = requests.post(url, data = json_body, headers = headers)
-            data = response.json()
-            st.text("coindcx_id : " + data["coindcx_id"])
-            st.text("first_name : " + data["first_name"])
-            st.text("last_name : " + data["last_name"])
-            st.text("mobile_number : " + data["mobile_number"])
-            st.text("email : " + data["email"])
-    User_data(st, requests, pd, url["user_data"], body["users_balance"])
+# with user_data:
+#     def User_data(st, requests, pd, url , body):
+#         row = st.container()
+#         with row:
+#             response = requests.post(url, data = json_body, headers = headers)
+#             data = response.json()
+#             st.text("coindcx_id : " + data["coindcx_id"])
+#             st.text("first_name : " + data["first_name"])
+#             st.text("last_name : " + data["last_name"])
+#             st.text("mobile_number : " + data["mobile_number"])
+#             st.text("email : " + data["email"])
+#     User_data(st, requests, pd, url["user_data"], body["users_balance"])
